@@ -20,7 +20,10 @@ impl Ctx {
             cmd: cmd.into(),
             callback: CallbackFn(0),
             error: CallbackFn(1),
-            url: "http://tauri.localhost".parse().unwrap(),
+            // Origine locale de l'application : `http://tauri.localhost` sous Windows (et Android),
+            // `tauri://localhost` sur macOS et Linux. Une autre origine est traitée comme distante et
+            // refusée par les autorisations (« not allowed »). Même règle que l'exemple de `tauri::test`.
+            url: if cfg!(any(windows, target_os = "android")) { "http://tauri.localhost" } else { "tauri://localhost" }.parse().unwrap(),
             body: InvokeBody::Json(args),
             headers: Default::default(),
             invoke_key: INVOKE_KEY.to_string(),
