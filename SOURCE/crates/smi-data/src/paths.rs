@@ -3,7 +3,8 @@
 //! 2. un dossier parent de l'exécutable qui contient `PROJECT/MASTER_PROMPT.md` (lancement depuis les sources) ;
 //! 3. macOS (et Linux) : `~/Documents/SLOT-MATH-INTELLIGENCE` (créé au premier lancement, rempli par le
 //!    pack de départ ; dossier visible dans le Finder pour y déposer des documents) ;
-//!    Windows : `%USERPROFILE%\Desktop\SLOT-MATH-INTELLIGENCE` s'il existe, sinon `%APPDATA%\SlotMathIntelligence`.
+//!    Windows : `Bureau\SLOT-MATH-INTELLIGENCE` s'il existe déjà, sinon `Documents\SLOT-MATH-INTELLIGENCE`
+//!    (voir [`Paths::default_root`]).
 //!
 //! Dans un paquet `.app`, l'exécutable est dans `Slot Math Intelligence.app/Contents/MacOS/` : l'étape 2 ne
 //! trouve rien et l'on passe à l'étape 3. Le dossier du Bureau n'est pas sondé sur macOS : y accéder
@@ -58,13 +59,20 @@ impl Paths {
     }
 
     /// Dossier de données par défaut de la plateforme (étape 3).
+    ///
+    /// Windows : un dossier `SLOT-MATH-INTELLIGENCE` déjà posé sur le Bureau reste prioritaire (installation
+    /// d'origine de l'auteur) ; sinon le VRAI dossier Documents de l'utilisateur (dossier connu de Windows,
+    /// donc aussi quand il est redirigé vers OneDrive). Dernier recours : `%APPDATA%\SlotMathIntelligence`.
     #[cfg(windows)]
     pub fn default_root() -> PathBuf {
-        if let Ok(home) = std::env::var("USERPROFILE") {
-            let d = Path::new(&home).join("Desktop").join(ROOT_NAME);
+        if let Some(desk) = dirs::desktop_dir() {
+            let d = desk.join(ROOT_NAME);
             if d.exists() {
                 return d;
             }
+        }
+        if let Some(docs) = dirs::document_dir() {
+            return docs.join(ROOT_NAME);
         }
         let base = std::env::var("APPDATA").map(PathBuf::from).unwrap_or_else(|_| PathBuf::from("."));
         base.join("SlotMathIntelligence")
@@ -73,6 +81,9 @@ impl Paths {
     /// Dossier de données par défaut de la plateforme (étape 3).
     #[cfg(not(windows))]
     pub fn default_root() -> PathBuf {
+        if let Some(docs) = dirs::document_dir() {
+            return docs.join(ROOT_NAME);
+        }
         let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
         home.join("Documents").join(ROOT_NAME)
     }

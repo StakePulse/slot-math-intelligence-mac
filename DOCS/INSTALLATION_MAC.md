@@ -8,14 +8,19 @@ macOS 11 (Big Sur) ou plus récent, Mac Apple Silicon (M1 à M4) ou Intel : l'ap
 Deux façons de le fabriquer (on ne peut pas fabriquer une application Mac depuis Windows) :
 
 - **Sans Mac, par GitHub** : le dépôt contient `.github/workflows/macos.yml`. Sur github.com, onglet
-  **Actions** → **macOS** → **Run workflow**. Environ 15 minutes plus tard, l'archive
-  `Slot-Math-Intelligence-macOS` (en bas de la page de l'exécution) contient le `.dmg` et l'outil `smi`.
+  **Actions** → **macOS** → **Run workflow**, choisir l'édition (**partage** par défaut, ou **complet**).
+  20 à 25 minutes plus tard (plus l'attente d'une machine libre), l'archive
+  `Slot-Math-Intelligence-macOS-<édition>` (en bas de la page de l'exécution) contient le `.dmg` et `smi`.
   Cette chaîne lance aussi tous les tests sur macOS et simule un premier lancement.
 - **Sur un Mac** : voir « Compiler sur un Mac » plus bas (`bash construire-mac.sh`).
 
+Deux éditions, même application :
+- **partage** (pour d'autres personnes) : référence datée du marché + modèle d'exemple + guides ;
+- **complet** (pour l'auteur) : en plus les tables de FINDERS KEEPERS, les documents et les fichiers du projet.
+
 ## 2. Installer
 
-1. Ouvrir `Slot Math Intelligence_0.1.0_universal.dmg`, glisser l'application dans **Applications**.
+1. Ouvrir `Slot Math Intelligence_0.2.0_universal.dmg`, glisser l'application dans **Applications**.
 2. **Premier lancement** : l'application n'est pas signée par un compte développeur Apple (signature
    « ad hoc »), macOS la bloque donc la première fois.
    - macOS 15 (Sequoia) et plus : double-cliquer l'application, fermer l'avertissement, puis
@@ -33,17 +38,20 @@ Les lancements suivants se font normalement (Launchpad, Spotlight, Dock).
 
 | Dossier | Contenu |
 |---|---|
-| `PROJECT/` | `MASTER_PROMPT.md`, `AUDIT.md`, `DECISIONS.md`, `ROADMAP.md` |
 | `DATABASE/` | `smi.sqlite`, `imports/` (sources datées), `luts/` |
 | `DOCUMENTS/` | `PDF/`, `SCREENSHOTS/`, `EXCEL/`, `OTHER/`, `INBOX/` (déposer ici, puis « Intégrer ») |
 | `EXPORTS/` | `prompts/`, `reports/`, `models/`, `simulations/` |
-| `DOCS/` | ce guide, le guide d'utilisation, les mises à jour |
+| `DOCS/` | ce guide et le guide d'utilisation |
+| `PROJECT/` | édition complète seulement : `MASTER_PROMPT.md`, `AUDIT.md`, `DECISIONS.md`, `ROADMAP.md` |
 
 **Premier lancement** : le Dashboard affiche « installation des données de départ » pendant
 quelques secondes. L'application copie son pack (sans jamais écraser un fichier existant) et
-l'importe : instantané du marché du 2026-11-03 (125 slots, 1 116 modes), les 5 tables de FINDERS
-KEEPERS analysées exactement, les 10 documents, et le modèle d'exemple « ×5 000 » régénéré par le
-moteur (statut DRAFT : le valider dans Math Engine pour retrouver le statut VALIDATED).
+l'importe : instantané du marché du 2026-11-03 (125 slots, 1 116 modes) et le modèle d'exemple « ×5 000 »
+régénéré par le moteur (statut DRAFT : le valider dans Math Engine). L'édition complète ajoute les 5 tables
+de FINDERS KEEPERS analysées exactement et les 10 documents.
+
+La marche à suivre pour concevoir une math propre avec l'outil est la même que sous Windows : voir
+« Des maths propres en 5 étapes » dans `INSTALLATION_WINDOWS.md`.
 
 Pour utiliser un autre dossier : lancer l'application avec la variable `SMI_ROOT` (voir plus bas).
 Les simulations et validations faites sous Windows ne sont pas transférées : la base est propre à

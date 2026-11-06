@@ -36,7 +36,7 @@ export default function Settings() {
     }
   }
   return (
-    <Page title="Settings" intro="Tous les seuils utilisés par un calcul sont ici, modifiables et documentés dans PROJECT/DECISIONS.md." actions={<><span className="faint">{saved && `enregistré à ${saved}`}</span><button className="btn primary" onClick={() => save()}>Enregistrer</button></>}>
+    <Page title="Settings" intro="Tous les seuils utilisés par un calcul sont ici, modifiables ; les valeurs par défaut sont justifiées dans DECISIONS.md (dossier PROJECT de l'édition complète)." actions={<><span className="faint">{saved && `enregistré à ${saved}`}</span><button className="btn primary" onClick={() => save()}>Enregistrer</button></>}>
       <ErrorBox error={error} />
       <Tabs tabs={[["perf", "Performance"], ["collect", "Collecte"], ["market", "Marché"], ["thresholds", "Seuils et tolérances"], ["project", "Projet"]]} on={tab} set={setTab} />
       {tab === "perf" && (

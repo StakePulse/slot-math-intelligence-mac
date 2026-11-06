@@ -132,3 +132,21 @@ Demande de l'utilisateur : « la MÊME application, mais pour Mac », dans un do
 - **Fabrication** : impossible depuis Windows (SDK et éditeur de liens d'Apple). Deux voies : action GitHub
   `.github/workflows/macos.yml` sur une machine macOS (tests sur macOS, paquet vérifié, premier lancement
   simulé avec le pack embarqué) ou `construire-mac.sh` sur un Mac.
+
+## D-16 — Édition à partager (2026-11-06)
+Demande de l'utilisateur : partager l'outil avec des gens sous Windows « pour qu'ils aient des maths pas trop
+dégueu ». Constat : l'installateur Windows 0.1.0 (dossier d'origine) s'ouvrirait VIDE sur un autre PC (pas de
+dossier sur le Bureau → base neuve dans AppData, sans référence du marché, donc sans comparaison possible).
+Choix :
+- **Version 0.2.0 depuis ce code portable**, qui a déjà l'installation du pack au premier lancement.
+- **Deux packs** : `packs/commun` (instantané daté du marché, spécification du modèle d'exemple) et
+  `packs/prive` (tables de FINDERS KEEPERS — jeu non sorti —, PDF d'autres studios, captures, archive tierce).
+  **L'édition à partager est la configuration PAR DÉFAUT** : une fabrication sans option n'embarque rien de privé.
+  L'édition complète s'obtient avec la surcouche `tauri.complet.conf.json` (fusion JSON : elle ne fait
+  qu'AJOUTER des ressources) et inclut aussi `PROJECT/` et `MISES_A_JOUR.md`.
+- **Garde-fous** : test du contenu exact de `packs/commun`, test de la configuration (aucune ressource privée
+  dans `tauri.conf.json`), vérification du paquet dans l'action macOS selon l'édition.
+- **Windows : données dans le vrai dossier Documents** (`dirs::document_dir`, donc aussi s'il est redirigé vers
+  OneDrive), `Bureau\SLOT-MATH-INTELLIGENCE` restant prioritaire s'il existe (installation de l'auteur).
+- La vérification de structure ne signale plus absents les fichiers de `PROJECT/` quand ce dossier est vide
+  (édition à partager).

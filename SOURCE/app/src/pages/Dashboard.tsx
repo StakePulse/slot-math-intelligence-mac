@@ -34,7 +34,7 @@ export default function Dashboard() {
   return (
     <Page title="Dashboard" intro="État de la bibliothèque : données de marché datées, modèles, simulations, documents, et les alertes de cohérence à traiter.">
       {starter?.status === "running" && (
-        <Note>Premier lancement : installation des données de départ dans {starter.root} (marché daté, tables de FINDERS KEEPERS, documents, modèle d'exemple). Comptez moins d'une minute.</Note>
+        <Note>Premier lancement : installation des données de départ dans {starter.root} (référence datée du marché, modèle d'exemple). Comptez moins d'une minute.</Note>
       )}
       {starter?.status === "done" && (
         <Note>Données de départ installées dans {starter.root} : {starter.report?.copied ?? 0} fichier(s) copié(s){starter.report?.errors?.length ? `, ${starter.report.errors.length} erreur(s) (voir les alertes)` : ""}. Le modèle d'exemple est à valider dans Math Engine.</Note>

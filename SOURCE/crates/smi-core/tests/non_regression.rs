@@ -9,7 +9,7 @@ use smi_core::stats::{compute, StatsOptions};
 use std::path::PathBuf;
 
 fn data_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../starter/DATABASE/imports/our_games/finders-keepers_2026-11-05")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../packs/prive/DATABASE/imports/our_games/finders-keepers_2026-11-05")
 }
 
 fn load(mode: &str, cost: f64) -> Option<Distribution> {

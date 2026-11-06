@@ -22,7 +22,7 @@ Chaque carte porte une étiquette :
 ## Écrans
 
 **Dashboard** — compteurs, dernière collecte, alertes de cohérence (à marquer « traitées »), projets récents, journal.
-Au tout premier lancement, un bandeau suit l'installation des données de départ dans `~/Documents/SLOT-MATH-INTELLIGENCE`.
+Au tout premier lancement, un bandeau suit l'installation des données de départ dans le dossier `Documents/SLOT-MATH-INTELLIGENCE`.
 
 **Market Intelligence** — filtres (nature du mode, volatilité, plage de max win, plage de RTP, top N, provider).
 - *Référence statistique* : pour chaque indicateur, n, moyenne, médiane, moyennes pondérées (bets / turnover),
@@ -66,7 +66,7 @@ des objectifs de son modèle signalée.
 **Prompt Generator** — aperçu rendu ou brut, Copier, export .md / .txt, données JSON + lookup table de la
 loi cible, rapport de validation. Si la loi n'est pas VALIDATED, le prompt le dit.
 
-**Document Library** — import (PDF, images, CSV, JSON, TXT, Excel), dépôt dans `DOCUMENTS/INBOX` (Finder) puis
+**Document Library** — import (PDF, images, CSV, JSON, TXT, Excel), dépôt dans `DOCUMENTS/INBOX` (Explorateur ou Finder) puis
 « Intégrer », recherche plein texte, notes et étiquettes. Les valeurs repérées sont « À VALIDER » :
 Valider, Corriger ou Rejeter. Images et PDF sans texte : saisie manuelle (pas d'OCR installé). Un CSV
 `id,weight,payout` est reconnu comme lookup table et peut être analysé.
@@ -78,7 +78,7 @@ simulations du modèle, comparaison champ par champ de deux versions.
 threads, graine par défaut ; collecte ; référence du marché ; seuils (volatilité, tolérances, catégories,
 barèmes) ; chemins et vérification de la structure.
 
-## Ce que l'outil ne fait pas (v0.1)
+## Ce que l'outil ne fait pas (v0.2)
 - Pas de collecte automatique sans votre accord (robots.txt).
 - Pas de statistiques de bonus ni de scatters pour les jeux du marché : une lookup table publique ne dit
   pas quel round est un bonus (affiché « non disponible »).
@@ -87,6 +87,6 @@ barèmes) ; chemins et vérification de la structure.
   ces mécaniques sont traitées au niveau de la loi cible et décrites dans le prompt.
 
 ## En ligne de commande
-`./smi` (fourni à côté du `.dmg`, voir INSTALLATION_MAC.md) : `init [pack]`, `stats <table.csv> [prix]`, `generate <spec.json>`,
+`smi` (`smi.exe` sous Windows ; sur Mac, fourni à côté du `.dmg`) : `init [pack]`, `stats <table.csv> [prix]`, `generate <spec.json>`,
 `revise <modèle> <spec.json> [note]`, `simulate|validate <modèle> [spins] [graine]`, `prompt <modèle>`,
 `docs`, `collect`, `market`.

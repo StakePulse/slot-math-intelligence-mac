@@ -1,0 +1,9 @@
+{
+  "bundle": {
+    "resources": {
+      "../../packs/prive": "starter",
+      "../../../PROJECT": "starter/PROJECT",
+      "../../../DOCS/MISES_A_JOUR.md": "starter/DOCS/MISES_A_JOUR.md"
+    }
+  }
+}

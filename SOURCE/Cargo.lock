@@ -3586,7 +3586,7 @@ checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
 
 [[package]]
 name = "slot-math-intelligence"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -3606,7 +3606,7 @@ checksum = "d0d5d4b1981b8bbbb7aed204cae5726d683d5d6ac7e74ec54122ea28f315e7c8"
 
 [[package]]
 name = "smi-cli"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "serde_json",
@@ -3616,7 +3616,7 @@ dependencies = [
 
 [[package]]
 name = "smi-core"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -3625,11 +3625,12 @@ dependencies = [
 
 [[package]]
 name = "smi-data"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "calamine",
  "chrono",
+ "dirs",
  "flate2",
  "hex",
  "pdf-extract",

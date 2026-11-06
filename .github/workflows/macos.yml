@@ -1,18 +1,28 @@
 # Fabrique Slot Math Intelligence pour macOS sur une machine macOS de GitHub (Apple Silicon) :
 # tests du moteur SUR macOS, application universelle (Apple Silicon + Intel), .dmg, outil `smi`,
 # puis vérification du paquet et d'un premier lancement simulé (pack de départ, sans fenêtre).
-# Lancement : onglet « Actions » du dépôt → « macOS » → « Run workflow », ou en poussant un tag v*.
+# Lancement : onglet « Actions » du dépôt → « macOS » → « Run workflow » (choix de l'édition),
+# ou en poussant un tag v* (édition à partager).
 name: macOS
 
 on:
   workflow_dispatch:
+    inputs:
+      edition:
+        description: "partage = pour d'autres personnes (marché + modèle d'exemple) ; complet = avec FINDERS KEEPERS, documents et PROJECT"
+        type: choice
+        options: [partage, complet]
+        default: partage
   push:
     tags: ["v*"]
+
+env:
+  EDITION: ${{ inputs.edition || 'partage' }}
 
 jobs:
   macos:
     runs-on: macos-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     defaults:
       run:
         working-directory: SOURCE
@@ -34,6 +44,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: SOURCE
+          cache-on-failure: true
 
       - name: Interface (TypeScript + Vite)
         working-directory: SOURCE/app
@@ -47,9 +58,12 @@ jobs:
       - name: Test IPC de toutes les commandes + premier lancement (sans fenêtre)
         run: cargo test -p slot-math-intelligence
 
-      - name: Application universelle (.app + .dmg)
+      - name: Application universelle (.app + .dmg), édition ${{ env.EDITION }}
         working-directory: SOURCE/app
-        run: npx tauri build --target universal-apple-darwin
+        run: |
+          EXTRA=""
+          if [ "$EDITION" = "complet" ]; then EXTRA="--config src-tauri/tauri.complet.conf.json"; fi
+          npx tauri build --target universal-apple-darwin --bundles app,dmg $EXTRA
 
       - name: Outil en ligne de commande smi (universel)
         run: |
@@ -67,12 +81,22 @@ jobs:
           codesign -dv "$APP" 2>&1 | grep -E "Signature|Identifier|Format"
           plutil -p "$APP/Contents/Info.plist" | grep -E "CFBundleIdentifier|LSMinimumSystemVersion|NSDocumentsFolderUsageDescription|CFBundleDevelopmentRegion"
           R="$APP/Contents/Resources/starter"
-          test -f "$R/PROJECT/MASTER_PROMPT.md"
+          find "$R" -type f | sed "s#^$R/##" | sort
+          test -f "$R/DOCS/GUIDE_UTILISATEUR.md"
           test -f "$R/DOCS/INSTALLATION_MAC.md"
           test -f "$R/DATABASE/imports/slotlab_market_2026-11-03.json"
           test -f "$R/DATABASE/imports/models/exemple-5000.spec.json"
-          test -f "$R/DATABASE/imports/our_games/finders-keepers_2026-11-05/lookUpTable_base_0.csv"
-          ls -la "$R/DOCUMENTS/PDF" "$R/DOCUMENTS/SCREENSHOTS"
+          if [ "$EDITION" = "complet" ]; then
+            test -f "$R/PROJECT/MASTER_PROMPT.md"
+            test -f "$R/DATABASE/imports/our_games/finders-keepers_2026-11-05/lookUpTable_base_0.csv"
+            test -d "$R/DOCUMENTS/PDF"
+          else
+            # Édition à partager : rien de privé ne doit être embarqué.
+            test ! -e "$R/PROJECT"
+            test ! -e "$R/DOCUMENTS"
+            test ! -e "$R/DATABASE/imports/our_games"
+            test ! -e "$R/DOCS/MISES_A_JOUR.md"
+          fi
           ls -la target/universal-apple-darwin/release/bundle/dmg/
 
       - name: Premier lancement simulé avec le pack embarqué
@@ -84,7 +108,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Slot-Math-Intelligence-macOS
+          name: Slot-Math-Intelligence-macOS-${{ env.EDITION }}
           path: |
             SOURCE/target/universal-apple-darwin/release/bundle/dmg/*.dmg
             SOURCE/target/livraison/smi

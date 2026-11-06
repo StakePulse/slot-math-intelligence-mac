@@ -1,7 +1,10 @@
-//! Pack de départ : premier lancement sur une machine neuve (application installée sur macOS, dossier
-//! de données vide). Les fichiers livrés avec l'application (documents du projet, instantané daté du
-//! marché, tables de FINDERS KEEPERS, documents, spécification du modèle d'exemple) sont copiés dans
-//! le dossier de données SANS JAMAIS écraser un fichier existant, puis importés comme le fait `smi init`.
+//! Pack de départ : premier lancement sur une machine neuve (dossier de données vide). Les fichiers livrés
+//! avec l'application sont copiés dans le dossier de données SANS JAMAIS écraser un fichier existant, puis
+//! importés comme le fait `smi init`. Deux éditions (voir `tauri.conf.json` et DECISIONS.md D-16) :
+//! - **à partager** (par défaut) : `packs/commun` = instantané daté du marché + spécification du modèle
+//!   d'exemple, et les guides d'utilisation ;
+//! - **complète** (`tauri.complet.conf.json`) : en plus `packs/prive` = tables de FINDERS KEEPERS, documents
+//!   et captures, et les documents du projet (`PROJECT/`).
 //!
 //! Chaque étape est idempotente : l'instantané est dédoublonné à l'import, les tables ne sont importées
 //! que si le jeu n'a encore aucun mode, les documents sont dédoublonnés par SHA-256 et le modèle
@@ -115,7 +118,7 @@ pub fn seed(db: &Db, paths: &Paths, s: &AppSettings, rep: &mut StarterReport) {
                 return Ok(None);
             }
             let g = generate(&spec, &s.volatility)?;
-            let (id, v) = models::create_model(db, &g, &["Pack de départ".into()], "Modèle d'exemple livré avec l'application (même spécification que la v2 de la version Windows)")?;
+            let (id, v) = models::create_model(db, &g, &["Pack de départ".into()], "Modèle d'exemple livré avec l'application")?;
             Ok(Some(format!("modèle d'exemple « {} » créé ({id} v{v}, statut DRAFT : à valider)", spec.name)))
         })();
         match r {
@@ -152,13 +155,31 @@ pub fn install(db: &Db, paths: &Paths, s: &AppSettings, starter_dir: Option<&Pat
 mod tests {
     use super::*;
 
-    fn starter_dir() -> std::path::PathBuf {
-        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../starter")
+    fn pack_dir(name: &str) -> std::path::PathBuf {
+        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../packs").join(name)
+    }
+
+    fn tmp(tag: &str) -> std::path::PathBuf {
+        std::env::temp_dir().join(format!("smi-{tag}-{}-{}", std::process::id(), std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()))
+    }
+
+    /// Assemble un pack comme le fait tauri.conf.json (plusieurs sources vers le même dossier `starter`).
+    fn assemble(packs: &[&str]) -> std::path::PathBuf {
+        let dir = tmp("pack");
+        for p in packs {
+            copy_missing(&pack_dir(p), &dir).unwrap();
+        }
+        dir
+    }
+
+    fn counts(db: &Db) -> (i64, i64, i64, i64) {
+        let count = |sql: &str| -> i64 { db.conn().query_row(sql, [], |r| r.get(0)).unwrap() };
+        (count("SELECT COUNT(*) FROM slots"), count("SELECT COUNT(*) FROM modes"), count("SELECT COUNT(*) FROM documents"), count("SELECT COUNT(*) FROM models"))
     }
 
     #[test]
     fn copy_never_overwrites() {
-        let tmp = std::env::temp_dir().join(format!("smi-copy-{}", std::process::id()));
+        let tmp = tmp("copy");
         let (a, b) = (tmp.join("a"), tmp.join("b"));
         std::fs::create_dir_all(a.join("x")).unwrap();
         std::fs::write(a.join("x").join("f.txt"), "pack").unwrap();
@@ -171,13 +192,56 @@ mod tests {
         let _ = std::fs::remove_dir_all(&tmp);
     }
 
-    /// Le vrai pack livré : installation sur un dossier vide, puis une seconde fois sans doublon.
+    /// Garde-fou de l'édition à partager : le pack commun ne contient que des données publiables
+    /// (instantané daté du marché, spécification du modèle d'exemple), jamais nos tables ni des documents.
     #[test]
-    fn installs_real_pack_once() {
-        let dir = starter_dir();
-        assert!(dir.join("DATABASE/imports").join(SNAPSHOT).exists(), "pack de départ introuvable : {}", dir.display());
-        let tmp = std::env::temp_dir().join(format!("smi-starter-{}-{}", std::process::id(), std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
-        let paths = Paths::at(&tmp);
+    fn shareable_pack_has_no_private_data() {
+        let root = pack_dir("commun");
+        let mut files = Vec::new();
+        let mut stack = vec![root.clone()];
+        while let Some(d) = stack.pop() {
+            for e in std::fs::read_dir(&d).unwrap() {
+                let p = e.unwrap().path();
+                if p.is_dir() {
+                    stack.push(p);
+                } else {
+                    files.push(p.strip_prefix(&root).unwrap().to_string_lossy().replace(std::path::MAIN_SEPARATOR, "/"));
+                }
+            }
+        }
+        files.sort();
+        assert_eq!(files, vec!["DATABASE/imports/models/exemple-5000.spec.json".to_string(), format!("DATABASE/imports/{SNAPSHOT}")], "contenu inattendu dans le pack commun");
+    }
+
+    /// Édition à partager : marché + modèle d'exemple, aucune table de nos jeux, aucun document.
+    #[test]
+    fn installs_shareable_pack() {
+        let dir = assemble(&["commun"]);
+        let root = tmp("partage");
+        let paths = Paths::at(&root);
+        paths.ensure().unwrap();
+        let db = Db::open(&paths.database).unwrap();
+        let rep = install(&db, &paths, &AppSettings::default(), Some(&dir)).unwrap();
+        assert!(rep.errors.is_empty(), "erreurs : {:?}", rep.errors);
+        let (slots, modes, docs, mods) = counts(&db);
+        assert_eq!(slots, 125);
+        assert_eq!(modes, 1116);
+        assert_eq!(fk_modes_count(&db), 0);
+        assert_eq!(docs, 0);
+        assert_eq!(mods, 1);
+        assert!(!paths.imports.join("our_games").exists());
+        drop(db);
+        let _ = std::fs::remove_dir_all(&root);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// Édition complète : installation sur un dossier vide, puis une seconde fois sans doublon.
+    #[test]
+    fn installs_full_pack_once() {
+        let dir = assemble(&["commun", "prive"]);
+        assert!(dir.join("DATABASE/imports").join(SNAPSHOT).exists());
+        let root = tmp("complet");
+        let paths = Paths::at(&root);
         paths.ensure().unwrap();
         let db = Db::open(&paths.database).unwrap();
         let s = AppSettings::default();
@@ -185,11 +249,8 @@ mod tests {
         let rep = install(&db, &paths, &s, Some(&dir)).unwrap();
         assert!(rep.errors.is_empty(), "erreurs : {:?}", rep.errors);
         assert!(installed(&db).is_some());
-        // PROJECT/ et DOCS/ sont ajoutés au pack par tauri.conf.json (depuis la racine du dépôt).
-        assert!(dir.join("../../PROJECT/MASTER_PROMPT.md").exists());
         assert!(paths.imports.join("our_games").join(FK_DIR).join("reference_figures.json").exists());
-        let count = |sql: &str| -> i64 { db.conn().query_row(sql, [], |r| r.get(0)).unwrap() };
-        let (slots, modes, docs, mods) = (count("SELECT COUNT(*) FROM slots"), count("SELECT COUNT(*) FROM modes"), count("SELECT COUNT(*) FROM documents"), count("SELECT COUNT(*) FROM models"));
+        let (slots, modes, docs, mods) = counts(&db);
         assert_eq!(fk_modes_count(&db), 5);
         assert!(slots >= 126, "slots : {slots}");
         assert!(docs >= 10, "documents : {docs}");
@@ -197,11 +258,9 @@ mod tests {
         // Second passage : rien de dupliqué.
         let rep2 = install(&db, &paths, &s, Some(&dir)).unwrap();
         assert_eq!(rep2.copied, 0);
-        assert_eq!(count("SELECT COUNT(*) FROM slots"), slots);
-        assert_eq!(count("SELECT COUNT(*) FROM modes"), modes);
-        assert_eq!(count("SELECT COUNT(*) FROM documents"), docs);
-        assert_eq!(count("SELECT COUNT(*) FROM models"), 1);
+        assert_eq!(counts(&db), (slots, modes, docs, 1));
         drop(db);
-        let _ = std::fs::remove_dir_all(&tmp);
+        let _ = std::fs::remove_dir_all(&root);
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

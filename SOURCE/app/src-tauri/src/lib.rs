@@ -117,7 +117,11 @@ fn app_info(st: State<AppState>) -> R<Value> {
 #[tauri::command]
 fn structure_check(st: State<AppState>) -> R<Value> {
     let dirs = st.paths.ensure().map_err(err)?;
-    let files = ["PROJECT/MASTER_PROMPT.md", "PROJECT/AUDIT.md", "PROJECT/DECISIONS.md", "PROJECT/ROADMAP.md", "DATABASE/smi.sqlite"];
+    // La base est obligatoire ; les documents du projet n'existent que dans l'édition complète : on ne
+    // signale donc absent que ceux d'un dossier PROJECT qui a été rempli.
+    let project = ["PROJECT/MASTER_PROMPT.md", "PROJECT/AUDIT.md", "PROJECT/DECISIONS.md", "PROJECT/ROADMAP.md"];
+    let has_project = project.iter().any(|f| st.paths.root.join(f).exists());
+    let files: Vec<&str> = std::iter::once("DATABASE/smi.sqlite").chain(project.iter().copied().filter(|_| has_project)).collect();
     let checks: Vec<Value> = files.iter().map(|f| json!({"path": f, "exists": st.paths.root.join(f).exists()})).collect();
     Ok(json!({"dirs": dirs, "files": checks, "schema_version": st.db.schema_version()}))
 }
