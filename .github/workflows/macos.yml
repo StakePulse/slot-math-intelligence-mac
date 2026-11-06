@@ -1,0 +1,91 @@
+# Fabrique Slot Math Intelligence pour macOS sur une machine macOS de GitHub (Apple Silicon) :
+# tests du moteur SUR macOS, application universelle (Apple Silicon + Intel), .dmg, outil `smi`,
+# puis vérification du paquet et d'un premier lancement simulé (pack de départ, sans fenêtre).
+# Lancement : onglet « Actions » du dépôt → « macOS » → « Run workflow », ou en poussant un tag v*.
+name: macOS
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: SOURCE
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: SOURCE/app/package-lock.json
+
+      - name: Rust (cibles Apple Silicon et Intel)
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          rustup target add aarch64-apple-darwin x86_64-apple-darwin
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: SOURCE
+
+      - name: Interface (TypeScript + Vite)
+        working-directory: SOURCE/app
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+
+      - name: Tests du moteur et des données (sur macOS)
+        run: cargo test --release -p smi-core -p smi-data
+
+      - name: Test IPC de toutes les commandes + premier lancement (sans fenêtre)
+        run: cargo test -p slot-math-intelligence
+
+      - name: Application universelle (.app + .dmg)
+        working-directory: SOURCE/app
+        run: npx tauri build --target universal-apple-darwin
+
+      - name: Outil en ligne de commande smi (universel)
+        run: |
+          cargo build --release -p smi-cli --target aarch64-apple-darwin
+          cargo build --release -p smi-cli --target x86_64-apple-darwin
+          mkdir -p target/livraison
+          lipo -create -output target/livraison/smi target/aarch64-apple-darwin/release/smi target/x86_64-apple-darwin/release/smi
+          lipo -info target/livraison/smi
+
+      - name: Vérification du paquet
+        run: |
+          APP="target/universal-apple-darwin/release/bundle/macos/Slot Math Intelligence.app"
+          lipo -info "$APP"/Contents/MacOS/*
+          codesign --verify --verbose "$APP"
+          codesign -dv "$APP" 2>&1 | grep -E "Signature|Identifier|Format"
+          plutil -p "$APP/Contents/Info.plist" | grep -E "CFBundleIdentifier|LSMinimumSystemVersion|NSDocumentsFolderUsageDescription|CFBundleDevelopmentRegion"
+          R="$APP/Contents/Resources/starter"
+          test -f "$R/PROJECT/MASTER_PROMPT.md"
+          test -f "$R/DOCS/INSTALLATION_MAC.md"
+          test -f "$R/DATABASE/imports/slotlab_market_2026-11-03.json"
+          test -f "$R/DATABASE/imports/models/exemple-5000.spec.json"
+          test -f "$R/DATABASE/imports/our_games/finders-keepers_2026-11-05/lookUpTable_base_0.csv"
+          ls -la "$R/DOCUMENTS/PDF" "$R/DOCUMENTS/SCREENSHOTS"
+          ls -la target/universal-apple-darwin/release/bundle/dmg/
+
+      - name: Premier lancement simulé avec le pack embarqué
+        run: |
+          R="target/universal-apple-darwin/release/bundle/macos/Slot Math Intelligence.app/Contents/Resources/starter"
+          SMI_ROOT="$RUNNER_TEMP/smi-root" ./target/livraison/smi init "$R"
+          SMI_ROOT="$RUNNER_TEMP/smi-root" ./target/livraison/smi market | head -20
+          test -f "$RUNNER_TEMP/smi-root/DATABASE/smi.sqlite"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Slot-Math-Intelligence-macOS
+          path: |
+            SOURCE/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+            SOURCE/target/livraison/smi
+          if-no-files-found: error

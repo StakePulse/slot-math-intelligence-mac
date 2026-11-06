@@ -1,0 +1,17 @@
+[package]
+name = "smi-cli"
+description = "Slot Math Intelligence — outil en ligne de commande (sans interface)"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "smi"
+path = "src/main.rs"
+
+[dependencies]
+smi-core = { path = "../smi-core" }
+smi-data = { path = "../smi-data" }
+serde_json.workspace = true
+anyhow.workspace = true

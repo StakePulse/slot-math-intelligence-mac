@@ -1,0 +1,9 @@
+# Scripts et fichiers lus sur macOS : fins de ligne Unix quelle que soit la machine qui les enregistre.
+* text=auto eol=lf
+*.png binary
+*.icns binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.sqlite binary

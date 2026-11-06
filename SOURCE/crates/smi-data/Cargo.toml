@@ -1,0 +1,24 @@
+[package]
+name = "smi-data"
+description = "Slot Math Intelligence — base SQLite, collecte du marché, imports, bibliothèque de documents"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+smi-core = { path = "../smi-core" }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+rusqlite = { version = "0.40", features = ["bundled"] }
+ureq = "2.12"
+flate2 = "1"
+sha2 = "0.10"
+hex = "0.4"
+uuid = { version = "1", features = ["v4"] }
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+regex = "1"
+calamine = "0.37"
+pdf-extract = "0.9"

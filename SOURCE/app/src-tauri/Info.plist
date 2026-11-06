@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- Fusionné par Tauri avec l'Info.plist généré (même dossier que tauri.conf.json). -->
+  <key>CFBundleDevelopmentRegion</key>
+  <string>fr</string>
+  <key>NSDocumentsFolderUsageDescription</key>
+  <string>Slot Math Intelligence range sa base, ses documents et ses exports dans le dossier Documents/SLOT-MATH-INTELLIGENCE.</string>
+  <key>NSDesktopFolderUsageDescription</key>
+  <string>Slot Math Intelligence lit les fichiers du Bureau que vous choisissez d'importer (lookup tables, documents).</string>
+  <key>NSDownloadsFolderUsageDescription</key>
+  <string>Slot Math Intelligence lit les fichiers téléchargés que vous choisissez d'importer (lookup tables, documents).</string>
+</dict>
+</plist>

@@ -1,0 +1,25 @@
+[workspace]
+resolver = "2"
+members = ["crates/smi-core", "crates/smi-data", "crates/smi-cli", "app/src-tauri"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Oracle Labs"]
+license = "Proprietary"
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+anyhow = "1"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 4
+strip = true
+
+# Les tests du moteur tirent des millions de spins : on les compile optimisés même en debug.
+[profile.dev.package.smi-core]
+opt-level = 3

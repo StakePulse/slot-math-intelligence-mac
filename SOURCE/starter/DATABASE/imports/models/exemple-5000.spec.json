@@ -1,0 +1,25 @@
+{
+  "name": "Exemple ×5 000 (démonstration)",
+  "game_type": "Video slot 5×4, ways",
+  "mechanics": [
+    "Ways",
+    "Free Spins",
+    "Scatter Features",
+    "Multipliers",
+    "Buy Bonus"
+  ],
+  "price": 1.0,
+  "rtp": 0.965,
+  "max_win": 5000.0,
+  "max_win_one_in": 850000.0,
+  "max_rtp_share": 0.015,
+  "hit_rate": 0.27,
+  "bonus_one_in": 180.0,
+  "bonus_share": 0.42,
+  "volatility": "Medium-High",
+  "sd_target": null,
+  "base_max_win": null,
+  "bonus_floor": null,
+  "bonus_floor_min": 10.0,
+  "granularity": 0.1
+}

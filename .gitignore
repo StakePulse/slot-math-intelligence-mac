@@ -1,0 +1,14 @@
+# Compilation
+SOURCE/target/
+SOURCE/app/node_modules/
+SOURCE/app/dist/
+SOURCE/app/src-tauri/gen/
+/LIVRAISON/
+
+# Données créées en lançant l'application depuis les sources (racine = ce dossier) :
+# la base et les fichiers de travail restent sur la machine.
+/DATABASE/
+/DOCUMENTS/
+/EXPORTS/
+
+.DS_Store
