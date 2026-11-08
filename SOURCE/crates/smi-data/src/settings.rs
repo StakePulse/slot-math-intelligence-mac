@@ -2,6 +2,7 @@
 //! Tout seuil utilisé par un calcul est ici, modifiable et documenté (DECISIONS.md).
 
 use serde::{Deserialize, Serialize};
+use smi_core::design::DesignRules;
 use smi_core::stats::StatsOptions;
 use smi_core::validate::Tolerances;
 use smi_core::volatility::VolatilityConfig;
@@ -79,6 +80,8 @@ pub struct AppSettings {
     pub stats: StatsOptions,
     /// Limite de l'énumération exhaustive des rouleaux (combinaisons).
     pub enumeration_limit: f64,
+    /// Seuils des contrôles de conception d'un jeu terminé (DECISIONS.md D-17).
+    pub design: DesignRules,
 }
 
 impl Default for AppSettings {
@@ -93,6 +96,7 @@ impl Default for AppSettings {
             tolerances: Tolerances::default(),
             stats: StatsOptions::default(),
             enumeration_limit: 5e7,
+            design: DesignRules::default(),
         }
     }
 }

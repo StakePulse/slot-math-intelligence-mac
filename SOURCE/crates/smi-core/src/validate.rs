@@ -163,6 +163,7 @@ pub fn validate(
     sim: Option<&SimResult>,
     repro: Option<&Reproducibility>,
     tol: &Tolerances,
+    design: &crate::design::DesignRules,
     generated_at: &str,
 ) -> ValidationReport {
     let mut c: Vec<Check> = Vec::new();
@@ -238,6 +239,35 @@ pub fn validate(
             add(4, "4.4", "Un bonus paie toujours quelque chose", warn(zero_bonus == 0.0), false, "P(bonus à 0) = 0".into(), format!("{:.3e}", zero_bonus), "Avertissement de conception (un bonus nul frustre).".into(), Nature::Exact);
             let p10 = b.p10.unwrap_or(0.0) / d.cost;
             add(4, "4.5", "Bonus qui paient (repère studio)", warn(p10 >= 5.0), false, "P10 du bonus ≥ 5× prix".into(), format!("P10 {:.2}× ; médiane {:.2}×", p10, b.median.unwrap_or(0.0) / d.cost), "Repère du studio : mesurer la part des bonus sous 15× (« un bonus doit payer »).".into(), Nature::Exact);
+            // Contrôles de conception (D-17) applicables à une loi cible.
+            let mut bonus_atoms: Vec<(u64, u64)> = d.atoms.iter().filter(|a| a.weight > 0 && d.classes.get(a.class as usize).is_some_and(|k| k.kind.is_bonus())).map(|a| (a.payout, a.weight)).collect();
+            bonus_atoms.sort_unstable();
+            if let Some(&(floor, _)) = bonus_atoms.first() {
+                let tot: u128 = bonus_atoms.iter().map(|&(_, w)| w as u128).sum();
+                let mut acc = 0u128;
+                let med = bonus_atoms.iter().find(|&&(_, w)| {
+                    acc += w as u128;
+                    acc * 2 >= tot
+                }).map_or(floor, |&(x, _)| x);
+                let near: u128 = bonus_atoms.iter().filter(|&&(x, _)| x as f64 <= floor as f64 * 1.1).map(|&(_, w)| w as u128).sum();
+                let near = near as f64 / tot as f64;
+                let has_floor = floor > 0 && floor as f64 >= design.floor_detect * med as f64;
+                let ratio = if floor > 0 { med as f64 / floor as f64 } else { f64::INFINITY };
+                add(
+                    4,
+                    "4.6",
+                    "Plancher du bonus loin de sa médiane (conception)",
+                    if !has_floor { NotRun } else { warn(ratio >= design.floor_median_ratio_min && near <= design.floor_near_max) },
+                    false,
+                    format!("médiane ≥ {:.1} × plancher ; ≤ {:.0} % des bonus à +10 % du plancher", design.floor_median_ratio_min, design.floor_near_max * 100.0),
+                    format!("plancher {:.2}×, médiane {:.2}× ({:.2} × le plancher), {:.1} % à +10 %", floor as f64 / 100.0, med as f64 / 100.0, ratio, near * 100.0),
+                    if has_floor { "Un hidden ou un bonus à gain minimal ne doit pas faire tomber la moitié des rounds juste au-dessus du plancher.".into() } else { "Pas de plancher voulu (minimum trop bas face à la médiane).".into() },
+                    Nature::Exact,
+                );
+            }
+            if d.cost <= 1.0 + 1e-9 {
+                add(4, "4.7", "Part du RTP des bonus (conception)", warn(b.bonus_share <= design.bonus_share_base_max), false, format!("≤ {:.0} %", design.bonus_share_base_max * 100.0), format!("{:.2} %", b.bonus_share * 100.0), "Seuil réglable (Settings → design) ; valeur de départ à confirmer.".into(), Nature::Exact);
+            }
         }
     }
 
@@ -248,6 +278,8 @@ pub fn validate(
     add(5, "5.2", "Lois conditionnelles cohérentes", ok((cond_mean - s.mean).abs() <= 1e-9 * s.mean.max(1.0)), true, format!("Σ P(classe)·E[X|classe] = {:.9}", s.mean), format!("{cond_mean:.9}"), "Formule des probabilités totales.".into(), Nature::Exact);
     add(5, "5.3", "Pas de trou sous le gain maximal", warn(s.gaps.is_empty()), false, "aucune bande vide".into(), if s.gaps.is_empty() { "aucune".into() } else { s.gaps.join(", ") }, "Une bande vide entre les gains courants et le max crée un « saut » visible pour les joueurs et sur StakeCruncher.".into(), Nature::Exact);
     add(5, "5.4", "Gains sur la grille de 0,1×", warn(s.off_grid_prob == 0.0), false, "0".into(), format!("{:.3e}", s.off_grid_prob), "Probabilité portée par des gains non multiples de 0,1×.".into(), Nature::Exact);
+    let thin: Vec<String> = s.bands.iter().filter(|b| !b.is_zero && !b.is_max && b.outcomes > 0 && b.outcomes < design.min_books_per_band).map(|b| format!("{} : {} issue(s)", b.label, b.outcomes)).collect();
+    add(5, "5.5", "Issues distinctes par tranche (conception)", warn(thin.is_empty()), false, format!("≥ {} par tranche", design.min_books_per_band), if thin.is_empty() { "aucune tranche mince".into() } else { thin.join(" ; ") }, "Le jeu final devra avoir au moins autant de books par tranche ; une tranche mince dans la loi cible le sera aussi dans le jeu.".into(), Nature::Exact);
 
     // 6. Fréquences
     if let Some(h) = t.hit_rate {
@@ -346,7 +378,7 @@ mod tests {
         let spec = GeneratorSpec { max_win_one_in: Some(400_000.0), ..Default::default() };
         let m = generate(&spec, &VolatilityConfig::default()).unwrap();
         let s = compute(&m.distribution, &StatsOptions::default());
-        let r = validate(&m.distribution, &s, &targets(&spec, 400_000.0), None, None, &Tolerances::default(), "test");
+        let r = validate(&m.distribution, &s, &targets(&spec, 400_000.0), None, None, &Tolerances::default(), &crate::design::DesignRules::default(), "test");
         assert_eq!(r.status, ModelStatus::NeedsReview);
         assert_eq!(r.failed, 0, "{:#?}", r.checks.iter().filter(|c| c.status == CheckStatus::Fail).collect::<Vec<_>>());
     }
@@ -360,7 +392,7 @@ mod tests {
         let cfg = SimConfig { spins: 1_000_000, seed: 11, threads: 4, chunk_size: 1 << 18 };
         let sim = run(&m.distribution, &cfg, &Control::default(), &opt, &|_, _| {});
         let rp = crate::sim::reproducibility(&m.distribution, 11, 200_000);
-        let r = validate(&m.distribution, &s, &targets(&spec, 400_000.0), Some(&sim), Some(&rp), &Tolerances::default(), "test");
+        let r = validate(&m.distribution, &s, &targets(&spec, 400_000.0), Some(&sim), Some(&rp), &Tolerances::default(), &crate::design::DesignRules::default(), "test");
         assert_eq!(r.status, ModelStatus::Validated, "{:#?}", r.checks.iter().filter(|c| c.status != CheckStatus::Pass).collect::<Vec<_>>());
     }
 
@@ -371,7 +403,7 @@ mod tests {
         let s = compute(&m.distribution, &StatsOptions::default());
         let mut t = targets(&spec, 1.0 / m.params.p_max);
         t.rtp = Some(0.97);
-        let r = validate(&m.distribution, &s, &t, None, None, &Tolerances::default(), "test");
+        let r = validate(&m.distribution, &s, &t, None, None, &Tolerances::default(), &crate::design::DesignRules::default(), "test");
         assert_eq!(r.status, ModelStatus::ValidationFailed);
     }
 }

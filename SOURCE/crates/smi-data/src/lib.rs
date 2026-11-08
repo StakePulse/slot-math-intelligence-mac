@@ -8,6 +8,7 @@
 //! - [`models`] : bibliothèque mathématique (modèles, versions, simulations, validations, prompts) ;
 //! - [`documents`] : bibliothèque de documents (import, classement, extraction, faits à valider).
 
+pub mod books;
 pub mod collector;
 pub mod db;
 pub mod documents;

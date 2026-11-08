@@ -13,7 +13,7 @@ export default function Settings() {
   const [saved, setSaved] = useState("");
   const [json, setJson] = useState("");
   const [structure, setStructure] = useState<any>(null);
-  const load = () => call("settings_get").then((r) => { setS(r.settings); setThreads(r.threads); setCores(r.cores); setJson(JSON.stringify({ volatility: r.settings.volatility, tolerances: r.settings.tolerances, stats: r.settings.stats }, null, 2)); });
+  const load = () => call("settings_get").then((r) => { setS(r.settings); setThreads(r.threads); setCores(r.cores); setJson(JSON.stringify({ volatility: r.settings.volatility, tolerances: r.settings.tolerances, stats: r.settings.stats, design: r.settings.design }, null, 2)); });
   useEffect(() => {
     load();
   }, []);
@@ -91,7 +91,7 @@ export default function Settings() {
         </Card>
       )}
       {tab === "thresholds" && (
-        <Card title="Volatilité, tolérances de validation, catégories, barèmes Stake" sub="JSON édité tel quel">
+        <Card title="Volatilité, tolérances de validation, catégories, barèmes Stake, contrôles de conception" sub="JSON édité tel quel">
           <Note>
             <b>Volatilité</b> : indicateurs (clé, poids, ancres lo → hi, échelle log), coupures du score entre les 6 classes, plages σ/prix visées par le générateur. <b>Tolérances</b> : écarts admis par la validation. <b>Catégories</b> : seuils petits / moyens / gros / très gros gains (multiples du prix). <b>Barèmes</b> : limites 2★ / 3★ (null = non contrôlé).
           </Note>

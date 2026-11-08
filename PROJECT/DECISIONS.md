@@ -150,3 +150,30 @@ Choix :
   OneDrive), `Bureau\SLOT-MATH-INTELLIGENCE` restant prioritaire s'il existe (installation de l'auteur).
 - La vérification de structure ne signale plus absents les fichiers de `PROJECT/` quand ce dossier est vide
   (édition à partager).
+
+## D-17 — Contrôles de conception d'un jeu terminé (2026-11-08)
+Origine : retours d'un concepteur de maths (ami de l'utilisateur) sur CASE Nº 55555, à intégrer à l'outil « pour
+refaire de bonnes maths » ; consigne : NE MODIFIER AUCUNE SLOT. Mesures préalables faites en LECTURE SEULE sur les
+tables publiées de CASE, puis reproduites à l'identique par l'outil (dossier du jeu vérifié inchangé).
+- **Nouvelle lecture** : dossier publié Stake Engine (`index.json`, lookup tables, books `.jsonl` ou `.jsonl.zst`,
+  décodeur zstd pur Rust `ruzstd`, trames multiples gérées). Le dossier n'est jamais écrit ; le rapport va en base
+  (migration v2, table `design_reports`) et s'exporte en Markdown.
+- **9 contrôles** (`smi-core::design`), exacts sur les poids : symboles hauts affichés ; connexions gagnantes du
+  jeu de base ; plancher / médiane (hidden, achat, bonus) ; ordre des scatters global ET par bonus ; books par
+  tranche (jeu de base / bonus) ; doublons (même book : 1 − exp(−45 Σp²) en 10 bonus ; même multi ; contenu
+  identique, empreinte canonique sans `index`) ; hit rate face au marché (P25 des pairs au max comparable, et cible
+  du studio facultative) ; max win (2★) ; part du RTP des bonus (base, Ante).
+- **Statuts** : ÉCHEC pour une règle stricte (moyenne qui baisse quand les scatters augmentent ; tranche vide sous
+  le max) ; À REVOIR pour un seuil dépassé ; NON MESURABLE si les books ne contiennent pas l'information.
+- **Seuils de départ À CONFIRMER** (Settings → `design`) : hauts ≥ 20 % des symboles affichés et des connexions ;
+  médiane ≥ 1,5 × plancher, ≤ 15 % des rounds à +10 % du plancher, plancher retenu s'il vaut ≥ 5 % de la médiane ;
+  ≥ 10 books par tranche ; groupes jugés à partir de 30 books ; revoir un bonus identique en 10 ≤ 1 % (repère du
+  studio) ; même multi ≤ 5 % ; part du RTP des bonus ≤ 50 % (base) et ≤ 60 % (Ante). Le concepteur n'a pas donné
+  de chiffre pour l'équilibre bas / hauts ni pour la part des bonus : ce sont des propositions.
+- **Prompt** : section 6.1 « Contrôles de conception du jeu terminé » (les 9 règles avec leurs seuils, format des
+  books attendu) + livrable n° 6. **Validation d'un modèle** : contrôles 4.6 (plancher du bonus), 4.7 (part du RTP
+  des bonus), 5.5 (issues par tranche), non bloquants.
+- Résultat sur CASE (pour mémoire, rien n'a été modifié dans le jeu) : connexions du jeu de base 95 % bas ; ordre
+  des scatters inversé dans L'Évasion et L'Expérience ; tranche 1 000-2 000× à 5 books ; part des bonus 50,2 % /
+  67,0 % (Ante) ; DOSSIER SPIN : 31,6 % des rounds collés au plancher de 300× et 10 % au même multi ; doublons
+  des bonus 0,43 % en 10 (bon).

@@ -4,7 +4,7 @@ Windows 10 ou 11, 64 bits. Aucun droit administrateur nécessaire.
 
 ## Installer
 
-1. Lancer `Slot Math Intelligence_0.2.0_x64-setup.exe`.
+1. Lancer `Slot Math Intelligence_0.3.0_x64-setup.exe`.
 2. L'installateur n'est pas signé par un éditeur reconnu : Windows affiche **« Windows a protégé votre
    ordinateur »**. Cliquer **Informations complémentaires**, puis **Exécuter quand même**.
 3. Suivre l'installateur (installation pour votre compte seulement). Si WebView2 manque (rare sur
@@ -40,10 +40,13 @@ Settings → **Projet et intégrité** : chaque dossier a un bouton **Ouvrir**. 
    contrôle, barèmes Stake 2★/3★. Viser le statut **VALIDATED**.
 3. **Prompt Generator** : copier le cahier des charges complet pour Claude (ou l'exporter en .md).
 4. Construire le jeu (rouleaux, books) avec ce cahier des charges.
-5. **Le plus important** : importer la VRAIE lookup table du jeu terminé (`id,weight,payout`) dans Market
-   Intelligence → « Importer une lookup table », puis l'ouvrir dans **Slot Explorer**. L'analyse est exacte
-   (pas une simulation) : RTP, écart-type, max win et sa probabilité, trous dans la répartition, barèmes
-   Stake, comparaison au marché. C'est ce contrôle qui évite d'envoyer une math bancale.
+5. **Le plus important** : vérifier le jeu TERMINÉ. **Slot Explorer → Contrôles de conception → Analyser un
+   dossier publié** : choisir le dossier qui contient `index.json`, les lookup tables et les books (il n'est
+   jamais modifié). Mesures exactes sur les poids : symboles hauts face aux bas, connexions gagnantes du jeu de
+   base, ordre des scatters (6 > 5 > 4 > 3, dans chaque bonus), plancher d'un hidden ou d'un achat, books par
+   tranche, doublons, hit rate face au marché, max win, part du RTP dans les bonus (base et Ante). Rapport
+   exportable en .md. C'est ce contrôle qui évite d'envoyer une math bancale. Pour une simple lookup table
+   (`id,weight,payout`), Market Intelligence → « Importer une lookup table » donne l'analyse de la loi seule.
 
 L'outil donne une loi cible validée et un cahier des charges ; il n'écrit ni les rouleaux ni les books.
 

@@ -229,3 +229,42 @@ fn shareable_edition_config_has_no_private_data() {
     let full = keys(&read("tauri.complet.conf.json"));
     assert!(full.iter().any(|k| k.ends_with("packs/prive")) && full.iter().any(|k| k.contains("PROJECT")), "{full:?}");
 }
+
+/// Contrôles de conception : un petit jeu publié (format Stake), analysé comme le fait l'onglet de Slot Explorer.
+#[test]
+fn design_checks_on_a_published_folder() {
+    let c = setup();
+    let dir = std::env::temp_dir().join(format!("smi-ipc-jeu-{}", std::process::id())).join("jeu-ipc").join("publish_files");
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("index.json"), r#"{"modes":[{"name":"base","cost":1.0,"events":"books_base.jsonl","weights":"lookUpTable_base_0.csv"}]}"#).unwrap();
+    std::fs::write(dir.join("lookUpTable_base_0.csv"), "1,900,0\n2,90,120\n3,10,2000\n").unwrap();
+    std::fs::write(
+        dir.join("books_base.jsonl"),
+        [
+            r#"{"id":1,"payoutMultiplier":0,"criteria":"basegame","events":[{"index":0,"type":"reveal","gameType":"basegame","board":[["L1","L2"],["H1","S"]]}]}"#,
+            r#"{"id":2,"payoutMultiplier":120,"criteria":"basegame","events":[{"index":0,"type":"reveal","gameType":"basegame","board":[["L1","L1"],["L1","H2"]]},{"index":1,"type":"winInfo","wins":[{"symbol":"L1","amount":120}]}]}"#,
+            r#"{"id":3,"payoutMultiplier":2000,"criteria":"freegame","events":[{"index":0,"type":"reveal","gameType":"basegame","board":[["S","L1"],["S","S"]]},{"index":1,"type":"freeSpinTrigger","positions":[[0,0],[1,0],[1,1]]},{"index":2,"type":"reveal","gameType":"freegame","board":[["H1"]]},{"index":3,"type":"winInfo","wins":[{"symbol":"H1","amount":2000}]}]}"#,
+        ]
+        .join("\n"),
+    )
+    .unwrap();
+    // Un dossier sans index.json est refusé avec une explication.
+    assert!(c.call("design_analyze_start", json!({"path": dir.parent().unwrap()})).is_err());
+    let before: Vec<_> = std::fs::read_dir(&dir).unwrap().map(|e| e.unwrap().file_name()).collect();
+    let id = c.ok("design_analyze_start", json!({"path": dir}));
+    let res = c.wait(&id);
+    let rid = res["id"].clone();
+    assert_eq!(res["report"]["game"], "jeu-ipc");
+    let list = c.ok("design_reports_list", json!({}));
+    assert_eq!(list[0]["id"], rid);
+    let rep = c.ok("design_report_get", json!({"id": rid}));
+    let keys: Vec<&str> = rep["modes"][0]["checks"].as_array().unwrap().iter().map(|k| k["key"].as_str().unwrap()).collect();
+    for k in ["symboles_plateau", "connexions_hauts", "plancher", "ordre_scatters", "books_par_tranche", "doublons", "profil", "max_win", "part_bonus"] {
+        assert!(keys.contains(&k), "contrôle {k} absent : {keys:?}");
+    }
+    let path = c.ok("design_report_export", json!({"id": rid}));
+    assert!(std::fs::read_to_string(path.as_str().unwrap()).unwrap().contains("Contrôles de conception — jeu-ipc"));
+    // Le dossier analysé est intact.
+    let after: Vec<_> = std::fs::read_dir(&dir).unwrap().map(|e| e.unwrap().file_name()).collect();
+    assert_eq!(before, after);
+}

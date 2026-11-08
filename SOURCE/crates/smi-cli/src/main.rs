@@ -11,6 +11,7 @@
 //! smi docs                         intègre les documents déposés dans DOCUMENTS
 //! smi collect                      collecte StakeCruncher (si activée dans les réglages)
 //! smi market                       résumé du marché chargé
+//! smi books <dossier> [rapport.md]  contrôles de conception d'un jeu publié (lecture seule du dossier)
 //! ```
 
 use smi_core::dist::Distribution;
@@ -103,7 +104,7 @@ fn run() -> anyhow::Result<()> {
                 let st = compute(&mv.distribution, &s.stats);
                 let rp = sim::reproducibility(&mv.distribution, seed, 200_000);
                 let t = targets(&mv);
-                let rep = smi_core::validate::validate(&mv.distribution, &st, &t, Some(&r), Some(&rp), &s.tolerances, &smi_data::now());
+                let rep = smi_core::validate::validate(&mv.distribution, &st, &t, Some(&r), Some(&rp), &s.tolerances, &s.design, &smi_data::now());
                 models::save_validation(&db, id, mv.version, &rep)?;
                 println!("statut : {}", rep.status.label());
                 for c in rep.checks.iter().filter(|c| c.status != smi_core::validate::CheckStatus::Pass) {
@@ -140,8 +141,23 @@ fn run() -> anyhow::Result<()> {
             models::save_prompt(&db, id, mv.version, &md, Some(&path.display().to_string()))?;
             println!("{}", path.display());
         }
+        "books" => {
+            let dir = args.get(1).ok_or_else(|| anyhow::anyhow!("dossier publié attendu (celui qui contient index.json)"))?;
+            let (_, db, s) = open()?;
+            let cancel = std::sync::atomic::AtomicBool::new(false);
+            let (id, rep) = smi_data::books::analyze_folder(&db, &s, Path::new(dir), &|f, m| eprint!("\r{:5.1} % {m}          ", f * 100.0), &cancel)?;
+            eprintln!();
+            let md = smi_data::books::report_markdown(&rep);
+            match args.get(2) {
+                Some(out) => {
+                    std::fs::write(out, &md)?;
+                    println!("rapport {id} écrit dans {out}");
+                }
+                None => println!("{md}"),
+            }
+        }
         _ => {
-            println!("{}", include_str!("main.rs").lines().skip(2).take(12).map(|l| l.trim_start_matches("//! ")).collect::<Vec<_>>().join("\n"));
+            println!("{}", include_str!("main.rs").lines().skip(2).take(13).map(|l| l.trim_start_matches("//! ")).collect::<Vec<_>>().join("\n"));
         }
     }
     Ok(())
@@ -184,6 +200,7 @@ fn build_prompt(db: &Db, s: &AppSettings, mv: &models::ModelVersion, st: &smi_co
         validation: validation.as_ref(),
         sim: sim.as_ref(),
         market: market.as_ref(),
+        design: Some(&s.design),
     }))
 }
 

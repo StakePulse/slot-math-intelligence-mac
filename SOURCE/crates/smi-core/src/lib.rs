@@ -18,6 +18,7 @@
 //! - [`market`] : agrégats du marché (moyenne, médiane, pondérées, quartiles, valeurs extrêmes) ;
 //! - [`prompt`] : le prompt destiné à Claude.
 
+pub mod design;
 pub mod dist;
 pub mod generator;
 pub mod market;

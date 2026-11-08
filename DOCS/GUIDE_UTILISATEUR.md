@@ -35,6 +35,26 @@ Au tout premier lancement, un bandeau suit l'installation des données de dépar
   robots ; l'activer (Settings → Collecte) est votre décision. En attendant : « Importer un instantané »
   (fichier `market.json` d'un tiers) et « Importer une lookup table » (`id,weight,payout`).
 
+**Slot Explorer → Contrôles de conception (jeu terminé)** — « Analyser un dossier publié » : le dossier qui
+contient `index.json`, `lookUpTable_<mode>_0.csv` et `books_<mode>.jsonl.zst` (format Stake Engine). Lecture
+SEULE du dossier ; le rapport est enregistré ici et s'exporte en .md (EXPORTS/reports). Pour chaque mode, mesures
+EXACTES sur les poids :
+1. symboles affichés en jeu de base : part des HAUTS parmi bas + hauts ;
+2. connexions gagnantes du jeu de base : part portée par les hauts (« pas que des connexions de bas ») ;
+3. plancher d'un bonus, hidden ou achat : médiane assez loin, peu de rounds collés au plancher ;
+4. ordre des scatters : plus de scatters au déclenchement = plus de gain, en moyenne ET en médiane, tous bonus
+   confondus et dans chaque bonus (moyenne inversée = échec) ;
+5. books par tranche de gain, jeu de base et bonus séparés : ni trou (échec) ni tranche mince ;
+6. doublons : revoir un bonus identique en 10, deux bonus au même multi, books au contenu identique ;
+7. hit rate et profil (mort / sous la mise / ≥ mise) face au marché (et à `studio_hit_target` si réglé) ;
+8. max win (barème Stake 2★) ; 9. part du RTP venant des bonus, base et Ante.
+Ce qui est lu : `criteria` (rounds sans bonus : liste `no_bonus_criteria`), plateaux des révélations (`board`,
+contexte `gameType`/`context`), gains (`winInfo.wins[].symbol`, `amount` ou `win`), déclenchement (`positions`,
+`bonus`). Rang des symboles automatique (H*/P* hauts ; L*, A K Q J 10 9 bas), corrigeable par `high_symbols` /
+`low_symbols`. Tous les seuils : Settings, bloc `design` (valeurs de départ à confirmer, DECISIONS.md D-17).
+Les mêmes règles sont écrites dans le prompt pour Claude (section 6.1) ; la validation d'un modèle ajoute les
+contrôles applicables à une loi cible (plancher du bonus, part du RTP des bonus, issues par tranche).
+
 **Slot Explorer** — une slot et ses modes. Avec une lookup table : analyse exacte complète (classes,
 bandes, percentiles, seuils, barèmes Stake) et bouton « Simuler ce mode ». Sans table : chiffres importés.
 

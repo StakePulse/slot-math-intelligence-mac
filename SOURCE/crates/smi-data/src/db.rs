@@ -76,6 +76,12 @@ const MIGRATIONS: &[&str] = &[
     CREATE INDEX IF NOT EXISTS idx_sims_model ON simulations(model_id, version);
     CREATE INDEX IF NOT EXISTS idx_facts_doc ON extracted_facts(document_id);
     "#,
+    // v2 — contrôles de conception d'un jeu terminé (books publiés, D-17)
+    r#"
+    CREATE TABLE IF NOT EXISTS design_reports (
+        id INTEGER PRIMARY KEY, created_at TEXT NOT NULL, game TEXT NOT NULL, source TEXT NOT NULL,
+        passed INTEGER NOT NULL, warnings INTEGER NOT NULL, failed INTEGER NOT NULL, report TEXT NOT NULL);
+    "#,
 ];
 
 impl Db {

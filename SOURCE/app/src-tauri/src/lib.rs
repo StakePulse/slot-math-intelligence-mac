@@ -567,7 +567,7 @@ fn validate_start(st: State<AppState>, id: String, version: Option<u32>, spins: 
         job.set(0.9, "Reproductibilité (mêmes graines, 1 puis 3 threads)");
         let rp = sim::reproducibility(&mv.distribution, seed, 400_000);
         job.set(0.97, "Contrôles des 9 étapes");
-        let rep = validate(&mv.distribution, &stats, &report::targets(&mv), Some(&sim), Some(&rp), &s.tolerances, &smi_data::now());
+        let rep = validate(&mv.distribution, &stats, &report::targets(&mv), Some(&sim), Some(&rp), &s.tolerances, &s.design, &smi_data::now());
         models::save_validation(&db, &id, mv.version, &rep).map_err(err)?;
         if rep.failed > 0 {
             db.alert("ERROR", "validation", &format!("{} v{} : {} contrôle(s) en échec", mv.name, mv.version, rep.failed));
@@ -704,6 +704,44 @@ fn open_path(path: String) -> R<()> {
     tauri_plugin_opener::open_path(path, None::<&str>).map_err(err)
 }
 
+/// Contrôles de conception d'un jeu publié (dossier contenant `index.json`), lu sans écriture (D-17).
+#[tauri::command]
+fn design_analyze_start(st: State<AppState>, path: String) -> R<u64> {
+    let s = st.settings();
+    let db = st.db.clone();
+    let dir = std::path::PathBuf::from(&path);
+    if !dir.join("index.json").exists() {
+        return Err(format!("Pas de fichier index.json dans {path} : choisissez le dossier publié du jeu (celui qui contient index.json, les lookup tables et les books)."));
+    }
+    let label = format!("Contrôles de conception — {}", smi_data::books::game_name(&dir));
+    Ok(st.spawn("design", &label, move |job| {
+        let (id, rep) = smi_data::books::analyze_folder(&db, &s, &dir, &|f, m| job.set(f, m), &job.control.cancel).map_err(err)?;
+        Ok(json!({"id": id, "report": rep}))
+    }))
+}
+
+#[tauri::command]
+fn design_reports_list(st: State<AppState>) -> R<Value> {
+    serde_json::to_value(smi_data::books::list_reports(&st.db).map_err(err)?).map_err(err)
+}
+
+#[tauri::command]
+fn design_report_get(st: State<AppState>, id: i64) -> R<Value> {
+    serde_json::to_value(smi_data::books::get_report(&st.db, id).map_err(err)?).map_err(err)
+}
+
+/// Écrit le rapport lisible dans EXPORTS/reports et renvoie son chemin.
+#[tauri::command]
+fn design_report_export(st: State<AppState>, id: i64) -> R<String> {
+    let rep = smi_data::books::get_report(&st.db, id).map_err(err)?;
+    let day = rep.generated_at.get(..10).unwrap_or("rapport");
+    let p = st.paths.exports.join("reports").join(format!("{}_controles_{}_{}.md", market::slugify(&rep.game), day, id));
+    std::fs::create_dir_all(p.parent().unwrap()).map_err(err)?;
+    std::fs::write(&p, smi_data::books::report_markdown(&rep)).map_err(err)?;
+    st.db.log("export", &format!("contrôles de conception : {}", p.display()));
+    Ok(p.display().to_string())
+}
+
 #[tauri::command]
 fn starter_status(st: State<AppState>) -> R<Value> {
     let mut v = st.starter.lock().unwrap().clone();
@@ -782,6 +820,10 @@ macro_rules! handlers {
             docs_search,
             open_path,
             starter_status,
+            design_analyze_start,
+            design_reports_list,
+            design_report_get,
+            design_report_export,
         ]
     };
 }

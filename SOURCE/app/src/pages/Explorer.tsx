@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { call } from "../api";
 import { useApp } from "../App";
 import { FullReport } from "../components/statsview";
-import { Card, Empty, ErrorBox, Nature, Note, Page } from "../components/ui";
+import DesignChecks from "../components/DesignChecks";
+import { Card, Empty, ErrorBox, Nature, Note, Page, Tabs } from "../components/ui";
 import { int, num, oneInP, pct, x } from "../fmt";
 
 export default function Explorer() {
@@ -13,6 +14,7 @@ export default function Explorer() {
   const [modeId, setModeId] = useState<number | null>(params?.modeId ?? null);
   const [full, setFull] = useState<any>(null);
   const [error, setError] = useState<any>(null);
+  const [tab, setTab] = useState<string>(params?.tab ?? "marche");
 
   useEffect(() => {
     call("market_query", { filter: { providers: [], kinds: [], vol_classes: [], include_ours: true } }).then((d) => setRows(d.rows)).catch(setError);
@@ -32,8 +34,11 @@ export default function Explorer() {
   const fig = mode?.figures ?? {};
 
   return (
-    <Page title="Slot Explorer" intro="Une slot, tous ses modes. Avec une lookup table enregistrée, l'analyse complète est recalculée EXACTEMENT par notre moteur ; sinon seuls les chiffres importés (datés, sourcés) sont affichés.">
-      <ErrorBox error={error} />
+    <Page title="Slot Explorer" intro="Une slot, tous ses modes. Avec une lookup table enregistrée, l'analyse complète est recalculée EXACTEMENT par notre moteur ; sinon seuls les chiffres importés (datés, sourcés) sont affichés. Onglet Contrôles de conception : vérifier un jeu terminé à partir de son dossier publié.">
+      <Tabs tabs={[["marche", "Slots et modes"], ["conception", "Contrôles de conception (jeu terminé)"]]} on={tab} set={setTab} />
+      {tab === "conception" && <DesignChecks />}
+      {tab === "marche" && <ErrorBox error={error} />}
+      {tab === "marche" && (
       <div className="grid" style={{ gridTemplateColumns: "320px 1fr" }}>
         <Card title="Slots" sub={`${slots.length}`}>
           <input type="text" placeholder="Rechercher…" value={q} onChange={(e) => setQ(e.target.value)} style={{ width: "100%", marginBottom: 8 }} />
@@ -101,6 +106,7 @@ export default function Explorer() {
           )}
         </div>
       </div>
+      )}
     </Page>
   );
 }

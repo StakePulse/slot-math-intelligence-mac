@@ -1,8 +1,8 @@
 # Slot Math Intelligence — code portable (Windows + macOS)
 
 Laboratoire mathématique local pour concevoir des slots : référence du marché, moteur mathématique exact
-en Rust, simulateur multithread reproductible, générateur de lois, contrôle qualité en 9 étapes et prompts
-complets pour Claude. Ce dossier est né pour la version Mac ; son code est le même pour Windows et macOS
+en Rust, simulateur multithread reproductible, générateur de lois, contrôle qualité en 9 étapes, prompts
+complets pour Claude et, depuis la 0.3.0, contrôles de conception d'un jeu terminé lus sur ses books publiés. Ce dossier est né pour la version Mac ; son code est le même pour Windows et macOS
 et produit aussi l'**édition à partager**.
 
 | Dossier | Contenu |

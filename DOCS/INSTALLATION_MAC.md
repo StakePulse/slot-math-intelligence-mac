@@ -20,7 +20,7 @@ Deux éditions, même application :
 
 ## 2. Installer
 
-1. Ouvrir `Slot Math Intelligence_0.2.0_universal.dmg`, glisser l'application dans **Applications**.
+1. Ouvrir `Slot Math Intelligence_0.3.0_universal.dmg`, glisser l'application dans **Applications**.
 2. **Premier lancement** : l'application n'est pas signée par un compte développeur Apple (signature
    « ad hoc »), macOS la bloque donc la première fois.
    - macOS 15 (Sequoia) et plus : double-cliquer l'application, fermer l'avertissement, puis

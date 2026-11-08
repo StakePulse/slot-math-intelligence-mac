@@ -53,6 +53,7 @@ pub fn prompt_for(db: &Db, s: &AppSettings, mv: &ModelVersion) -> anyhow::Result
         validation: validation.as_ref(),
         sim: sim.as_ref(),
         market: market.as_ref(),
+        design: Some(&s.design),
     }))
 }
 

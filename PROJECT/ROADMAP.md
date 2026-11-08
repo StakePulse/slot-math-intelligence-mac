@@ -31,3 +31,8 @@
 Dossier `Desktop/SLOT-MATH-INTELLIGENCE-MAC` : même application, code rendu portable (D-15), pack de départ
 embarqué, fabrication du `.dmg` par GitHub Actions ou `construire-mac.sh`. Testée sous Windows (mêmes tests +
 pack de départ) ; la compilation et les tests SUR macOS se font dans l'action GitHub.
+
+## 0.3.0 — Contrôles de conception (2026-11-08)
+Slot Explorer → « Contrôles de conception » : lecture d'un dossier publié (books) et 9 contrôles issus des retours
+d'un concepteur (D-17) ; règles reprises dans le prompt et la validation. À suivre : confirmer les seuils avec le
+concepteur ; ajouter les bandes de rouleaux (fichier `strips`) quand un jeu les publie.

@@ -84,6 +84,8 @@ pub struct PromptInput<'a> {
     pub validation: Option<&'a ValidationReport>,
     pub sim: Option<&'a SimResult>,
     pub market: Option<&'a MarketContext>,
+    /// Seuils des contrôles de conception du jeu terminé (D-17) ; `None` = valeurs par défaut.
+    pub design: Option<&'a crate::design::DesignRules>,
 }
 
 pub fn fr(v: f64, digits: usize) -> String {
@@ -470,6 +472,23 @@ pub fn build(i: &PromptInput) -> String {
     let _ = writeln!(w, "- **Plafond de gain** : {} par round ; probabilité visée {} ; donne le nombre de books distincts au plafond (variété : éviter qu'un même max win soit rejoué).", xm(spec.max_win), one_in(s.max_win.one_in));
     let _ = writeln!(w, "- **Méthode de vérification** : (1) ré-évaluer chaque book par l'audit indépendant ; (2) comparer ids et paiements book ↔ table ; (3) recalculer le RTP par issues, classes, bandes et base + bonus (clôture < 1e-9) ; (4) recalculer EXACTEMENT sur la table chaque chiffre de la section 3 ; (5) simuler ≥ 10 M rounds à graine fixe et comparer (z, khi-deux) ; (6) barèmes Stake 2★ et 3★.");
     let _ = writeln!(w);
+    let dr = i.design.cloned().unwrap_or_default();
+    let _ = writeln!(w, "### 6.1 Contrôles de conception du jeu terminé (mesurés sur les books publiés)");
+    let _ = writeln!(w);
+    let _ = writeln!(w, "Slot Math Intelligence relira le dossier publié (`index.json`, tables, books) et vérifiera chaque point ci-dessous, exactement sur les poids. Conçois le jeu pour les respecter dès le départ :");
+    let _ = writeln!(w);
+    let _ = writeln!(w, "1. **Bas et hauts équilibrés** : sur les plateaux du jeu de base, au moins {} de symboles HAUTS parmi les bas + hauts affichés.", pct(dr.high_board_min, 0));
+    let _ = writeln!(w, "2. **Pas que des connexions de bas** : au moins {} des connexions gagnantes du jeu de base portées par des symboles hauts (bandes, piles et table de paiement à régler en conséquence).", pct(dr.high_wins_min, 0));
+    let _ = writeln!(w, "3. **Plancher loin de la médiane** : pour tout bonus, hidden ou achat à gain minimal garanti, médiane ≥ {} × le plancher et au plus {} des rounds à moins de +10 % du plancher (contre-exemple : plancher 1 000×, médiane 1 100×).", fr(dr.floor_median_ratio_min, 1), pct(dr.floor_near_max, 0));
+    let _ = writeln!(w, "4. **Plus de scatters = plus de gain** : à 6 scatters le bonus paie plus qu'à 5, à 5 plus qu'à 4, à 4 plus qu'à 3 — en moyenne ET en médiane, tous bonus confondus ET dans chaque bonus. Le nombre de scatters doit donc changer le contenu du bonus (tours, multiplicateurs, départ), pas seulement sa fréquence.");
+    let _ = writeln!(w, "5. **Books par tranche** : au moins {} books distincts dans chaque tranche de gain, du plus petit gain au max, séparément pour le jeu de base et pour les bonus ; aucune tranche vide sous le max.", dr.min_books_per_band);
+    let _ = writeln!(w, "6. **Pas de doublons** : chance de revoir un bonus identique en 10 bonus ≤ {} ; deux bonus au même multiplicateur ≤ {} ; aucun book au contenu identique à un autre.", pct(dr.repeat_in_10_max, 0), pct(dr.same_multi_max, 0));
+    let _ = writeln!(w, "7. **Profil** : hit rate du jeu de base au moins au premier quartile des jeux comparables (section 5){} ; donner la répartition mort / sous la mise / ≥ mise.", dr.studio_hit_target.map_or(String::new(), |t| format!(", et ≥ {} (cible du studio)", pct(t, 1))));
+    let _ = writeln!(w, "8. **Max win** : ≤ {} du prix (barème Stake 2★), fréquence de la section 3.", xm(dr.max_win_2star));
+    let _ = writeln!(w, "9. **Part du RTP des bonus** : ≤ {} dans le mode de base, ≤ {} dans un Ante (un Ante qui double la fréquence des bonus à loi égale fait monter cette part : la compenser).", pct(dr.bonus_share_base_max, 0), pct(dr.bonus_share_ante_max, 0));
+    let _ = writeln!(w);
+    let _ = writeln!(w, "Format attendu des books pour que ces contrôles soient mesurables : champ `criteria` qui distingue les rounds sans bonus, plateaux dans les événements de révélation (`board`, avec le contexte jeu de base / bonus), gains détaillés (`winInfo.wins[].symbol` et `amount`), événement de déclenchement avec les `positions` des scatters et le nom du `bonus`.");
+    let _ = writeln!(w);
 
     // 7. Objectifs de validation
     let _ = writeln!(w, "## 7. Objectifs de validation (critères d'acceptation)");
@@ -505,6 +524,7 @@ pub fn build(i: &PromptInput) -> String {
     let _ = writeln!(w, "3. Les fichiers publiés (books, lookup tables, index) et leurs empreintes SHA-256.");
     let _ = writeln!(w, "4. Un rapport mathématique sur le modèle de « Witchcraft — Mathematical Model » : indicateurs par mode, classes, bandes, percentiles, seuils et attentes, max win, sessions (Monte Carlo avec IC), vérification (intégrité, ré-évaluation, clôture).");
     let _ = writeln!(w, "5. Le tableau de conformité aux critères de la section 7, chiffre par chiffre, avec les écarts expliqués.");
+    let _ = writeln!(w, "6. Le rapport « Contrôles de conception » de Slot Math Intelligence sur le dossier publié (section 6.1), chaque point au vert ou son écart expliqué.");
     let _ = writeln!(w);
 
     // Annexe JSON
